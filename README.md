@@ -9,6 +9,8 @@ I raised this issue here: [#4432](https://github.com/openai/codex/issues/4432)
 and also created a pull request adding multi-account support: [#4457](https://github.com/openai/codex/pull/4457)  
 However, the feature hasn’t yet been merged or prioritized, so this standalone script fills that gap.
 
+***I HAVE TESTED THIS ON MAC ONLY***
+
 
 ---
 

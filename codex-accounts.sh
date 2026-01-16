@@ -68,13 +68,20 @@ backup_current_to() {
   local dest; dest="$(zip_path_for "$name")"
 
   note "Saving current ~/.codex to ${dest}..."
-  cp -R "$CODEX_HOME" "${tmpdir}/.codex"
+  # -RP: preserve symlinks without following them
+  cp -RP "$CODEX_HOME" "${tmpdir}/.codex"
+  # Remove tmp/ before zipping (temporary patch files, not worth saving)
+  rm -rf "${tmpdir}/.codex/tmp"
+  # Remove old archive (zip -r updates existing archives instead of replacing)
+  rm -f "$dest"
   (
     cd "$tmpdir"
-    zip -r -q "$dest" .codex
+    # -y: store symlinks as symlinks (not their targets)
+    zip -y -r -q "$dest" .codex
   )
   rm -rf "$tmpdir"
-  ok "Saved."
+  local size; size="$(du -h "$dest" | cut -f1)"
+  ok "Saved ${size}."
 }
 
 extract_to_codex() {
@@ -83,11 +90,17 @@ extract_to_codex() {
 
   [[ -f "$zipfile" ]] || die "Account archive not found: $zipfile"
 
+  # Extract into a guaranteed-empty subdir to avoid conflicts with existing entries
   local tmpdir; tmpdir="$(mktemp -d)"
-  note "Extracting $(basename "$zipfile")..."
-  unzip -q "$zipfile" -d "$tmpdir"
+  local extractdir="${tmpdir}/extract"
+  mkdir -p "$extractdir"
 
-  local extracted; extracted="$(find "$tmpdir" -type d -name ".codex" | head -n1)"
+  note "Extracting $(basename "$zipfile")..."
+  # -o: overwrite without prompting (safe since extractdir is empty)
+  # This handles edge cases where zip has symlink + directory entries for same path
+  unzip -o -q "$zipfile" -d "$extractdir"
+
+  local extracted; extracted="$(find "$extractdir" -type d -name ".codex" | head -n1)"
   [[ -z "${extracted:-}" ]] && { rm -rf "$tmpdir"; die ".codex folder missing inside archive."; }
 
   rm -rf "$CODEX_HOME"

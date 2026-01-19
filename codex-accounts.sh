@@ -111,11 +111,17 @@ resolve_current_name_or_prompt() {
 # ------------- commands -------------
 cmd_list() {
   ensure_dirs
+  load_state
   shopt -s nullglob
   local any=0
   for f in "$DATA_DIR"/*.zip; do
     any=1
-    echo " - $(basename "${f%%.zip}" .zip)"
+    local name; name="$(basename "${f%%.zip}" .zip)"
+    if [[ "$name" == "${CURRENT:-}" ]]; then
+      echo " * $name"
+    else
+      echo " - $name"
+    fi
   done
   [[ $any -eq 0 ]] && echo "(no accounts saved yet)"
 }

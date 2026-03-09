@@ -5,12 +5,22 @@ set -euo pipefail
 # Storage layout:
 #   Zips:   ~/codex-data/<account>.zip
 #   State:  ~/.codex-switch/state   (CURRENT=..., PREVIOUS=...)
+#   Shared: ~/.codex-switch/shared  (common config restored after switch)
 
 CODENAME="codex"
 CODEX_HOME="${HOME}/.codex"
 DATA_DIR="${HOME}/codex-data"
 STATE_DIR="${HOME}/.codex-switch"
 STATE_FILE="${STATE_DIR}/state"
+SHARED_DIR="${STATE_DIR}/shared"
+SHARED_PATHS=(
+  "rules"
+  "AGENTS.md"
+  "config.toml"
+  "skills"
+  "memories"
+  "automations"
+)
 
 # ------------- utils -------------
 die() { echo "[ERR] $*" >&2; exit 1; }
@@ -22,7 +32,7 @@ require_bin() {
 }
 
 ensure_dirs() {
-  mkdir -p "$DATA_DIR" "$STATE_DIR"
+  mkdir -p "$DATA_DIR" "$STATE_DIR" "$SHARED_DIR"
 }
 
 load_state() {
@@ -58,6 +68,50 @@ prompt_account_name() {
   echo "$ans"
 }
 
+save_shared_from_codex() {
+  # Persist selected common files/dirs outside account archives.
+  assert_codex_present_or_hint
+  mkdir -p "$SHARED_DIR"
+
+  local p src dst parent
+  for p in "${SHARED_PATHS[@]}"; do
+    src="${CODEX_HOME}/${p}"
+    dst="${SHARED_DIR}/${p}"
+    rm -rf "$dst"
+    if [[ -e "$src" ]]; then
+      parent="$(dirname "$dst")"
+      mkdir -p "$parent"
+      cp -R "$src" "$dst"
+    fi
+  done
+}
+
+strip_shared_from_tree() {
+  # Remove common files/dirs from a copied .codex tree before zipping account data.
+  local root="$1"
+  local p
+  for p in "${SHARED_PATHS[@]}"; do
+    rm -rf "${root}/${p}"
+  done
+}
+
+apply_shared_to_codex() {
+  # Overlay common files/dirs back into ~/.codex after account switch.
+  [[ -d "$SHARED_DIR" ]] || return 0
+
+  local p src dst parent
+  for p in "${SHARED_PATHS[@]}"; do
+    src="${SHARED_DIR}/${p}"
+    dst="${CODEX_HOME}/${p}"
+    rm -rf "$dst"
+    if [[ -e "$src" ]]; then
+      parent="$(dirname "$dst")"
+      mkdir -p "$parent"
+      cp -R "$src" "$dst"
+    fi
+  done
+}
+
 backup_current_to() {
   # Requires ~/.codex to exist
   local name="$1"
@@ -68,7 +122,9 @@ backup_current_to() {
   local dest; dest="$(zip_path_for "$name")"
 
   note "Saving current ~/.codex to ${dest}..."
+  save_shared_from_codex
   cp -R "$CODEX_HOME" "${tmpdir}/.codex"
+  strip_shared_from_tree "${tmpdir}/.codex"
   (
     cd "$tmpdir"
     zip -r -q "$dest" .codex
@@ -92,6 +148,7 @@ extract_to_codex() {
 
   rm -rf "$CODEX_HOME"
   mv "$extracted" "$CODEX_HOME"
+  apply_shared_to_codex
   rm -rf "$tmpdir"
   ok "Activated archive into ~/.codex."
 }

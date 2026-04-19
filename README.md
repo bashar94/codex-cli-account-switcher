@@ -56,8 +56,20 @@ This script backs up each account’s `.codex` directory as a compressed zip fil
 | `~/.codex`                | Active Codex session folder          |
 | `~/codex-data/<name>.zip` | Saved account backups                |
 | `~/.codex-switch/state`   | Tracks current and previous accounts |
+| `~/.codex-switch/shared`  | Shared config restored after switch  |
 
-It’s safe to use — your Codex configuration is preserved before every switch.
+It’s safe to use — your account session data is preserved before every switch.
+
+### Shared (global) `.codex` data
+The script keeps these paths common across all accounts (stored in `~/.codex-switch/shared`):
+- `rules/`
+- `AGENTS.md`
+- `config.toml`
+- `skills/`
+- `memories/`
+- `automations/`
+
+These paths are excluded from account zip files and overlaid after each switch, so your global rules/config stay consistent.
 
 ## ⚙️ Requirements
 - macOS / Linux

@@ -19,7 +19,7 @@ However, the feature hasn’t yet been merged or prioritized, so this standalone
 ```bash
 # Clone and install
 git clone https://github.com/bashar94/codex-cli-account-switcher.git
-cd codex-accounts-switcher
+cd codex-cli-account-switcher
 chmod +x codex-accounts.sh
 
 # Optionally make it global

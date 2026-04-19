@@ -1,5 +1,7 @@
 # Codex Accounts Switcher 🌀
 
+[![Mentioned in Awesome Codex CLI](https://awesome.re/mentioned-badge.svg)](https://github.com/RoggeOhta/awesome-codex-cli)
+
 **Easily manage multiple OpenAI Codex CLI accounts — switch, save, and restore with one command.**
 
 The official [OpenAI Codex CLI](https://github.com/openai/codex) does **not support multi-account login**.  

@@ -112,6 +112,23 @@ apply_shared_to_codex() {
   done
 }
 
+copy_tree_ignoring_sockets() {
+  local src="$1" dst="$2"
+  local rel
+  mkdir -p "$dst"
+  (
+    cd "$src" || exit 1
+    find . -mindepth 1 -type d -print0 |
+      while IFS= read -r -d '' rel; do
+        mkdir -p "${dst}/${rel#./}"
+      done
+    find . -mindepth 1 \( -type f -o -type l \) -print0 |
+      while IFS= read -r -d '' rel; do
+        cp -P "$rel" "${dst}/${rel#./}"
+      done
+  )
+}
+
 backup_current_to() {
   # Requires ~/.codex to exist
   local name="$1"
@@ -123,7 +140,7 @@ backup_current_to() {
 
   note "Saving current ~/.codex to ${dest}..."
   save_shared_from_codex
-  cp -R "$CODEX_HOME" "${tmpdir}/.codex"
+  copy_tree_ignoring_sockets "$CODEX_HOME" "${tmpdir}/.codex"
   strip_shared_from_tree "${tmpdir}/.codex"
   (
     cd "$tmpdir"
